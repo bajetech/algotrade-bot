@@ -6,7 +6,7 @@
 
 This is a simple bot, written in Python 3, that allows price points to be configured for the bot to send trading requests to supported DEXs to swap between any supported Algo/ASA trading pair.
 
-*The supported pairs are:*
+**The supported pairs are:**
 
 - Algo/USDt
 - Algo/USDC
@@ -17,7 +17,7 @@ At the moment this bot integrates with the following DEXs:
 
 ## Status
 
-This bot is currently under active early development and should not be considered stable. It also has not yet been audited.
+This bot is currently under active early development and has not yet been audited. It should therefore not be considered stable.
 
 ## Dislaimer
 
