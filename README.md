@@ -61,7 +61,7 @@ There are multiple ways that one can go about setting up a bot to run every some
 
 By default the bot will run in _5 second intervals_. To customise this interval change the `bot_interval` .env variable to the desired number of seconds.
 
-## Dislaimer
+## Disclaimer
 
 I started developing this bot because I wanted to automate trades of the Algo/ASA cryptocurrency tokens I hold as part of my business assets. After some consideration I've decided to build it in the open. Any and ALL use of this bot may involve various risks, including, but not limited to, losses during an automated swap due to the fluctuation of prices of tokens in a trading pair. Before using this bot, you should review it's code and any accompanying documentation to understand how the bot works. You are responsible for doing your diligence on the risks involved.
 
