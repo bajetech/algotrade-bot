@@ -32,7 +32,7 @@ The file [db/init.sql](./db/init.sql) contains SQL statements to initialize the 
 
 ## Environment Variables
 
-There are environment variables that need to be properly configured for the bot to work. Create a file named `.env` in the ptoject root folder and copy the contents of `.env.example` to it, then set the variables in .env to appropriate values.
+There are environment variables that need to be properly configured for the bot to work. Create a file named `.env` in the ptoject root folder and copy the contents of `.env.example` to it, then set the variables in **.env** to appropriate values.
 
 ## Dislaimer
 
