@@ -55,6 +55,12 @@ The file [db/init.sql](./db/init.sql) contains SQL statements to initialize the 
 
 There are environment variables that need to be properly configured for the bot to work. Create a file named `.env` in the ptoject root folder and copy the contents of `.env.example` to it, then set the variables in **.env** to appropriate values.
 
+## Launching the bot (to run every X seconds)
+
+There are multiple ways that one can go about setting up a bot to run every some number of seconds. Since I wanted to keep this simple I decided to go the route of using the python Time module to keep the bot running indefinitely so all you need to do is run the appropriate python script (`bot-mainnet.py` for Algorand mainnet, `bot-testnet.py` for Algorand testnet).
+
+By default the bot will run in _5 second intervals_. To customise this interval change the `bot_interval` .env variable to the desired number of seconds.
+
 ## Dislaimer
 
 I started developing this bot because I wanted to automate trades of the Algo/ASA cryptocurrency tokens I hold as part of my business assets. After some consideration I've decided to build it in the open. Any and ALL use of this bot may involve various risks, including, but not limited to, losses during an automated swap due to the fluctuation of prices of tokens in a trading pair. Before using this bot, you should review it's code and any accompanying documentation to understand how the bot works. You are responsible for doing your diligence on the risks involved.
