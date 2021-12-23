@@ -19,6 +19,27 @@ At the moment this bot integrates with the following DEXs:
 
 This bot is currently under active early development and has not yet been audited. It should therefore not be considered stable.
 
+## Development Setup
+
+This repo requires Python 3.7 or higher. We recommend you use a Python virtual environment to install the required dependencies.
+
+Set up venv (one time):
+
+- `python3 -m venv venv`
+
+Active venv:
+
+- `. venv/bin/activate` (if your shell is bash/zsh)
+- `. venv/bin/activate.fish` (if your shell is fish)
+
+Install dependencies:
+
+- `pip install -r requirements.txt`
+
+The `tinyman-py-sdk` package is also needed but it is not yet released on PYPI. It can be installed directly from the tinyman-py-sdk repository with pip:
+
+`pip install git+https://github.com/tinymanorg/tinyman-py-sdk.git`
+
 ## Off-chain DB
 
 This bot is implemented to make use of an off-chain MariaDB database that currently contains two tables:
