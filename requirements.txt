@@ -1,4 +1,4 @@
 mariadb==1.0.9
 mypy==0.920
-py-algorand-sdk==1.8.0
+py-algorand-sdk==1.9.0
 python-dotenv==0.19.2

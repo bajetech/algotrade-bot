@@ -1,8 +1,8 @@
 import os
 import sys
 import time
-from algosdk import mnemonic
 import mariadb
+from algosdk import mnemonic
 from tinyman.v1.client import TinymanTestnetClient, TinymanMainnetClient
 from utils import get_db_connection, Account, get_supported_algo_assets
 from dotenv import load_dotenv
@@ -21,18 +21,21 @@ def run_bot(network: str):
     key = mnemonic.to_private_key(os.getenv("acct_mnemonic"))
     account = Account(os.getenv("acct_address"), key)
     token_network = network.lower()
+    supported_assets = get_supported_algo_assets(token_network, cursor)
+
+    if supported_assets is None:
+        print("Unable to retrieve information on supported assets. Abandoning bot run.")
+        sys.exit(1)
+
+    # Declare two lists that will be used to keep track of the trades that are completed
+    # in this run and the reverse trades that are to be setup, if any.
+    swaps_completed = []
+    reverse_trades = []
 
     while (True):
-        supported_assets = get_supported_algo_assets(token_network, cursor)
-
-        if supported_assets is None:
-            print(
-                "Unable to retrieve information on supported assets. Abandoning bot run.")
-            sys.exit(1)
-
         # Query for swaps that need to be carried out.
         try:
-            cursor.execute("SELECT id, asset1_id, asset2_id, asset_in_id, asset_in_amt, slippage, min_price_for_sell, do_redeem, do_reverse FROM trades WHERE wallet_address=? AND token_network=? AND is_completed=?", (account.address, token_network, 0))
+            cursor.execute("SELECT id, asset1_id, asset2_id, asset_in_id, asset_in_amt, slippage, min_price_for_sell, do_redeem, do_reverse FROM trades WHERE wallet_address=? AND token_network=? AND is_active=? AND is_completed=?", (account.address, token_network, 1, 0))
         except mariadb.Error as e:
             print(f"Error attempting to query for desired trades: {e}")
             sys.exit(1)
@@ -51,11 +54,6 @@ def run_bot(network: str):
                 account.address, account.private_key)
             result = client.submit(transaction_group, wait=True)
 
-        # Declare two lists that will be used to keep track of the trades that are completed
-        # in this run and the reverse trades that are to be setup, if any.
-        swaps_completed = []
-        reverse_trades = []
-
         # Loop through the swaps to be carried out.
         for (id, asset1_id, asset2_id, asset_in_id, asset_in_amt, slippage, min_price_for_sell, do_redeem, do_reverse) in cursor:
             # Fetch the assets of interest.
@@ -67,7 +65,7 @@ def run_bot(network: str):
             # Fetch the pool we will work with.
             pool = client.fetch_pool(asset1, asset2)
 
-            # Get a quote for a swap of 10 asset_in to asset_out with the configured slippage tolerance.
+            # Get a quote for a swap of asset_in amt to asset_out with the configured slippage tolerance.
             if asset_in_id != asset2_id:
                 quote = pool.fetch_fixed_input_swap_quote(
                     asset1(asset_in_amt), float(slippage))
@@ -141,16 +139,33 @@ def run_bot(network: str):
                 swaps_completed.append(int(id))
 
                 if do_reverse != 0:
-                    if int(supported_assets[asset_in_id].token_asset_id) == 0:
-                        asset_in_amt = int(asset_in_amt) + 14000
-                        reverse_min_price = (float(asset_in_amt) / float(total_asset_out_received)) + float(
-                            os.getenv("reverse_trade_min_profit_margin"))
+                    if asset_in_id != asset2_id:
+                        asset_out_id = asset2_id
                     else:
+                        asset_out_id = asset1_id
+
+                    if int(supported_assets[asset_in_id].token_asset_id) == 0:
+                        # If we reach here then Algo is the asset_in token. Note that Algo amounts
+                        # carry 6 demical places, while there are some ASAs that have a higher no.
+                        # of decimal places so we need to account for this in our calculations.
+                        NUM_DECIMAL_PLACES_NATIVE = 6
+                        asset_in_amt = int(asset_in_amt) + 14000
+
+                        if supported_assets[asset_out_id].num_decimal_places > NUM_DECIMAL_PLACES_NATIVE:
+                            # diff = int(
+                            #     supported_assets[asset_out_id].num_decimal_places) - NUM_DECIMAL_PLACES_NATIVE
+                            reverse_min_price = (
+                                float(asset_in_amt) / float(total_asset_out_received)) + 0.2
+                        else:
+                            reverse_min_price = (float(asset_in_amt) / float(total_asset_out_received)) + float(
+                                os.getenv("reverse_trade_min_profit_margin"))
+                    else:
+                        # TODO: This else branch needs fixing to support a difference in decimal places!!
                         reverse_min_price = (float(asset_in_amt) / float(total_asset_out_received + 14000)) + float(
                             os.getenv("reverse_trade_min_profit_margin"))
 
                     reverse_trades.append((account.address, asset2_id, asset1_id, asset2_id, total_asset_out_received, float(
-                        slippage), reverse_min_price, 0, 0, 0, token_network))
+                        slippage), reverse_min_price, 1, 0, 0, token_network, int(id)))
 
         # Update completed flag for the completed swaps.
         for swap_id in swaps_completed:
@@ -159,6 +174,9 @@ def run_bot(network: str):
 
         # Setup reverse trades.
         for trade in reverse_trades:
-            cursor.execute("INSERT INTO trades (wallet_address, asset1_id, asset2_id, asset_in_id, asset_in_amt, slippage, min_price_for_sell, do_redeem, is_completed, do_reverse, token_network) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", trade)
+            cursor.execute("INSERT INTO trades (wallet_address, asset1_id, asset2_id, asset_in_id, asset_in_amt, slippage, min_price_for_sell, do_redeem, is_completed, do_reverse, token_network, origin_trade) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", trade)
+
+        swaps_completed.clear()
+        reverse_trades.clear()
 
         time.sleep(float(os.getenv("bot_interval")))

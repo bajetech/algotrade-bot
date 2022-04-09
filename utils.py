@@ -18,6 +18,7 @@ class AssetDetail:
     """Simple class to store details of an Algorand asset we want to swap."""
     token_code: str
     token_asset_id: int
+    num_decimal_places: int
 
 
 def get_db_connection():
@@ -43,12 +44,13 @@ def get_supported_algo_assets(network: str, cursor) -> dict:
     assets = {}
     try:
         cursor.execute(
-            "SELECT id, token_code, token_asset_id FROM assets WHERE token_network=? ORDER BY id ASC", (network,))
+            "SELECT id, token_code, token_asset_id, num_decimal_places FROM assets WHERE token_network=? AND is_active=1 ORDER BY id ASC", (network,))
     except mariadb.Error as e:
         print(f"Error attempting to query for supported assets: {e}")
         return None
 
-    for (id, token_code, token_asset_id) in cursor:
-        assets[id] = AssetDetail(token_code, token_asset_id)
+    for (id, token_code, token_asset_id, num_decimal_places) in cursor:
+        assets[id] = AssetDetail(
+            token_code, token_asset_id, num_decimal_places)
 
     return assets
